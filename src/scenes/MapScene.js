@@ -364,7 +364,7 @@ export default class MapScene extends Scene {
       txt.on("pointerdown", (pointer) => {
         if (pointer.rightButtonDown()) {
           txt.destroy();
-          this.textsTiles.splice(txt.name, 1);
+          this.textsTiles?.splice(txt.name, 1);
           localStorage.setItem("texts", JSON.stringify(this.textsTiles));
         } else {
           if (this.scene.isActive("editor")) {
