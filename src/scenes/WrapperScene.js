@@ -1,4 +1,5 @@
 import { Scene } from "phaser";
+
 import { TEXT_SCENE_KEY } from "../utils/constants";
 import MapScene from "./MapScene";
 import TextScene from "./TextScene";

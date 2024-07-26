@@ -16,7 +16,7 @@ const GRID_OFFSET = {
   Y: 30,
 };
 
-export default class PlayScene extends Scene {
+export default class MapScene extends Scene {
   constructor() {
     super({ key: "MapScene" });
   }
