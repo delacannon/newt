@@ -1,5 +1,6 @@
+import { Actions, Geom, Scene } from "phaser";
+
 import jsPDF from "jspdf";
-import Phaser, { Actions, Geom } from "phaser";
 import { Ids, Patterns } from "phaser3-autotile";
 import { Grid, Pipeline, Tiles } from "../utils";
 import { EDITOR_TEXTS } from "../utils/constants";
@@ -15,7 +16,7 @@ const GRID_OFFSET = {
   Y: 30,
 };
 
-export default class PlayScene extends Phaser.Scene {
+export default class PlayScene extends Scene {
   constructor() {
     super({ key: "MapScene" });
   }
@@ -190,7 +191,7 @@ export default class PlayScene extends Phaser.Scene {
       xy: false,
     };
     this.tileSize = 32;
-    this.cursor = new Phaser.Geom.Rectangle(0, 0, 1, 1);
+    this.cursor = new Geom.Rectangle(0, 0, 1, 1);
     this.board = {
       x: EDITABLE_AREA.X,
       y: EDITABLE_AREA.Y,
@@ -599,7 +600,7 @@ export default class PlayScene extends Phaser.Scene {
       fillStyle: { color: 0xffffff, alpha: 0.25 },
     });
 
-    this.drawRect = new Phaser.Geom.Rectangle(
+    this.drawRect = new Geom.Rectangle(
       this.board.x + this.tileSize * this.cursor.x,
       this.board.y + this.tileSize * this.cursor.y,
       this.tileSize,

@@ -1,4 +1,5 @@
-import Phaser from "phaser";
+import { GameObjects, Scene } from "phaser";
+
 import {
   ALPHA_CONTROL_POSITION,
   DEFAULT_FONT_SIZE,
@@ -17,7 +18,7 @@ import {
 /**
  * Scene for editing text properties like font, alpha, and size.
  */
-export default class TextEditor extends Phaser.Scene {
+export default class TextEditor extends Scene {
   constructor() {
     super({ key: "editor" });
   }
@@ -25,7 +26,7 @@ export default class TextEditor extends Phaser.Scene {
   /**
    * Initializes the scene with data.
    * @param {Object} data - The data object containing text element.
-   * @param {Phaser.GameObjects.BitmapText} data.txt - The text element to edit.
+   * @param {GameObjects.BitmapText} data.txt - The text element to edit.
    */
   init(data) {
     this.textElement = data.txt;

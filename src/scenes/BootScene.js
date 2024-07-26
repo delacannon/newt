@@ -1,4 +1,4 @@
-import Phaser from "phaser";
+import { Scene } from "phaser";
 import { Tiles } from "../utils";
 import {
   BACKGROUND_COLOR,
@@ -10,7 +10,7 @@ import {
   SPRITE_SIZE,
 } from "../utils/constants";
 
-export default class BootScene extends Phaser.Scene {
+export default class BootScene extends Scene {
   constructor() {
     super({ key: "BootScene" });
   }
