@@ -3,7 +3,7 @@ import Phaser, { Actions, Geom, Scene } from 'phaser'
 import jsPDF from 'jspdf'
 import { Ids, Patterns } from 'phaser3-autotile'
 import { Grid, Pipeline, Tiles } from '../utils'
-import { EDITOR_TEXTS } from '../utils/constants'
+import { EDITOR_TEXTS, TEXT_SCENE_KEY } from '../utils/constants'
 import TextEditor from './TextEditor'
 
 const EDITABLE_AREA = {
@@ -457,6 +457,7 @@ export default class MapScene extends Scene {
                 )
                 .setInteractive()
                 .setScale(textTile.scale.x, textTile.scale.y)
+                .setAlpha(textTile.alpha || 1)
 
             this.input.setDraggable(txt)
             txt.name = textTile.name
@@ -492,6 +493,8 @@ export default class MapScene extends Scene {
     }
 
     resetMap() {
+        if (this.scene.manager.isActive(TEXT_SCENE_KEY)) return
+        console.log('m')
         this.saveState()
         this.propsTiles.forEach((tile) => {
             this.upperLayer.removeTileAt(tile.x, tile.y)
@@ -848,7 +851,6 @@ export default class MapScene extends Scene {
                 )
                 .setTint(config.tint)
                 .setAlpha(config.alpha)
-
             if (config.rotation) text.setRotation(config.rotation)
             if (config.interactive) {
                 text.setInteractive({ cursor: 'pointer' }).on('pointerup', () =>
