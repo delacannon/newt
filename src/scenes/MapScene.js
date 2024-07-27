@@ -21,6 +21,15 @@ export default class MapScene extends Scene {
         super({ key: 'MapScene' })
     }
 
+    storeRGBValues() {
+        const rgbValues = {
+            R: this.R,
+            G: this.G,
+            B: this.B,
+        }
+        localStorage.setItem('rgbValues', JSON.stringify(rgbValues))
+    }
+
     init() {
         const urlParams = new URLSearchParams(window.location.search)
         const encodedData = urlParams.get('data')
@@ -37,6 +46,11 @@ export default class MapScene extends Scene {
                     localStorage.setItem('props', JSON.stringify(data?.props))
                 if (data.grid)
                     localStorage.setItem('grid', JSON.stringify(data?.grid))
+                if (data.rgbValues)
+                    localStorage.setItem(
+                        'rgbValues',
+                        JSON.stringify(data?.rgbValues)
+                    )
             } catch (error) {
                 console.error('Failed to decode data from URL:', error)
             }
@@ -46,6 +60,11 @@ export default class MapScene extends Scene {
         this.textTiles = JSON.parse(localStorage.getItem('texts')) || []
         this.propsTiles = JSON.parse(localStorage.getItem('props')) || []
         this.gridTiles = JSON.parse(localStorage.getItem('grid')) || []
+        this.rgbValues = JSON.parse(localStorage.getItem('rgbValues')) || {
+            R: 0.0,
+            G: 0.0,
+            B: 0.0,
+        }
     }
 
     preload() {
@@ -110,6 +129,17 @@ export default class MapScene extends Scene {
             cellHeight: 38,
             x: 32,
             y: 200,
+        })
+
+        iconGroup.getChildren().forEach((icon) => {
+            icon.setInteractive()
+
+            icon.on('pointerover', () => {
+                this.icon_selected_name = icon.name
+            })
+            icon.on('pointerout', () => {
+                this.icon_selected_name = ''
+            })
         })
     }
 
@@ -243,8 +273,8 @@ export default class MapScene extends Scene {
         this.time = 0.0
         this.brigt = 0.6
         this.noise = 0.0
-        this.R = 0.0
-        this.B = 0.0
+        this.R = this.rgbValues.R
+        this.B = this.rgbValues.B
         this.icon_selected_name = ''
         this.cameras.main.setRenderToTexture(this.customPipeline)
         this.drawTexts()
@@ -394,6 +424,7 @@ export default class MapScene extends Scene {
 
             icon.on('pointerup', () => {
                 this.iconTiles[icon.name] = icon
+
                 localStorage.setItem('icons', JSON.stringify(this.iconTiles))
             })
 
@@ -469,6 +500,8 @@ export default class MapScene extends Scene {
         this.iconTiles = []
         this.textTiles = []
         this.propsTiles = []
+        this.R = 0.0
+        this.B = 0.0
         this.iconTilesGroup.clear(true, true)
         this.textTilesGroup.clear(true, true)
         this.grid.grid = new Map()
@@ -696,10 +729,12 @@ export default class MapScene extends Scene {
     adjustRed() {
         if (this.disableKeyboard) return
         this.R = this.R > 0.5 ? 0.0 : this.R + 0.01
+        this.storeRGBValues()
     }
 
     adjustBlue() {
         this.B = this.B > 0.5 ? 0.0 : this.B + 0.01
+        this.storeRGBValues()
     }
 
     downloadAsPNG() {
