@@ -423,7 +423,7 @@ export default class MapScene extends Scene {
     }
 
     generateRandomDungeon() {
-        const roomCount = 8
+        const roomCount = 32
         const minRoomSize = 2
         const maxRoomSize = 8
 
