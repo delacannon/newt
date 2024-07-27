@@ -134,6 +134,7 @@ export default class MapScene extends Scene {
     }
 
     handleIconSelection(icon) {
+        this.saveState()
         this.clearSelections(icon)
         icon.selected = true
         this.beep.play()
@@ -177,7 +178,63 @@ export default class MapScene extends Scene {
         return draggableIcon
     }
 
+    saveState() {
+        const state = {
+            iconTiles: JSON.parse(JSON.stringify(this.iconTiles)),
+            textTiles: JSON.parse(JSON.stringify(this.textTiles)),
+            propsTiles: JSON.parse(JSON.stringify(this.propsTiles)),
+            gridTiles: JSON.parse(JSON.stringify([...this.grid.grid])),
+        }
+        this.undoStack.push(state)
+        this.redoStack = []
+    }
+
+    restoreState(state) {
+        this.iconTiles = JSON.parse(JSON.stringify(state.iconTiles))
+        this.textTiles = JSON.parse(JSON.stringify(state.textTiles))
+        this.propsTiles = JSON.parse(JSON.stringify(state.propsTiles))
+        this.grid.grid = new Map(state.gridTiles)
+
+        this.iconTilesGroup.clear(true, true)
+        this.textTilesGroup.clear(true, true)
+        this.populateIconTilesGroup()
+        this.populateTextTilesGroup()
+        this.drawUI()
+        this.update()
+    }
+
+    undo() {
+        if (this.undoStack.length > 0) {
+            const currentState = {
+                iconTiles: JSON.parse(JSON.stringify(this.iconTiles)),
+                textTiles: JSON.parse(JSON.stringify(this.textTiles)),
+                propsTiles: JSON.parse(JSON.stringify(this.propsTiles)),
+                gridTiles: JSON.parse(JSON.stringify([...this.grid.grid])),
+            }
+            this.redoStack.push(currentState)
+            const prevState = this.undoStack.pop()
+            this.restoreState(prevState)
+        }
+    }
+
+    redo() {
+        if (this.redoStack.length > 0) {
+            const currentState = {
+                iconTiles: JSON.parse(JSON.stringify(this.iconTiles)),
+                textTiles: JSON.parse(JSON.stringify(this.textTiles)),
+                propsTiles: JSON.parse(JSON.stringify(this.propsTiles)),
+                gridTiles: JSON.parse(JSON.stringify([...this.grid.grid])),
+            }
+            this.undoStack.push(currentState)
+            const nextState = this.redoStack.pop()
+            this.restoreState(nextState)
+        }
+    }
+
     create() {
+        this.undoStack = []
+        this.redoStack = []
+
         this.textgroup = this.add.group()
         this.cameras.main.fadeIn(1000)
         this.beep = this.sound.add('beep', { volume: 0.25 })
@@ -250,9 +307,11 @@ export default class MapScene extends Scene {
         this.input.keyboard.on('keydown_SPACE', this.switchLayer, this)
         this.input.keyboard.on('keydown_R', this.adjustRed, this)
         this.input.keyboard.on('keydown_B', this.adjustBlue, this)
-        this.input.keyboard.on('keydown_D', this.downloadAsPNG, this)
+        this.input.keyboard.on('keydown_I', this.downloadAsPNG, this)
         this.input.keyboard.on('keydown_P', this.printAsPDF, this)
         this.input.keyboard.on('keydown_F2', this.generateRandomMap, this)
+        this.input.keyboard.on('keydown_Z', this.undo, this)
+        this.input.keyboard.on('keydown_V', this.redo, this)
     }
 
     setupBackground(rect) {
@@ -339,6 +398,7 @@ export default class MapScene extends Scene {
             })
 
             icon.on('pointerdown', (pointer) => {
+                this.saveState()
                 if (pointer.rightButtonDown()) {
                     icon.destroy()
                     this.iconTiles.splice(icon.name, 1)
@@ -401,6 +461,7 @@ export default class MapScene extends Scene {
     }
 
     resetMap() {
+        this.saveState()
         this.propsTiles.forEach((tile) => {
             this.upperLayer.removeTileAt(tile.x, tile.y)
         })
@@ -416,6 +477,7 @@ export default class MapScene extends Scene {
     }
 
     generateRandomMap() {
+        this.saveState()
         this.resetMap()
         this.mirror = { x: true, y: true }
         this.generateRandomDungeon()
@@ -856,6 +918,7 @@ export default class MapScene extends Scene {
     }
 
     handlePointerAction(pointer) {
+        this.saveState()
         if (pointer.leftButtonDown()) {
             this.handleDrawing(pointer)
         } else {
@@ -938,6 +1001,7 @@ export default class MapScene extends Scene {
 
     /// ERASE GRID
     handleErasing() {
+        this.saveState()
         if (this.mapLayer) {
             this.applyGridErasing()
         } else {
