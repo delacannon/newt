@@ -21,6 +21,15 @@ export default class MapScene extends Scene {
         super({ key: 'MapScene' })
     }
 
+    storeRGBValues() {
+        const rgbValues = {
+            R: this.R,
+            G: this.G,
+            B: this.B,
+        }
+        localStorage.setItem('rgbValues', JSON.stringify(rgbValues))
+    }
+
     init() {
         const urlParams = new URLSearchParams(window.location.search)
         const encodedData = urlParams.get('data')
@@ -37,6 +46,11 @@ export default class MapScene extends Scene {
                     localStorage.setItem('props', JSON.stringify(data?.props))
                 if (data.grid)
                     localStorage.setItem('grid', JSON.stringify(data?.grid))
+                if (data.rgbValues)
+                    localStorage.setItem(
+                        'rgbValues',
+                        JSON.stringify(data?.rgbValues)
+                    )
             } catch (error) {
                 console.error('Failed to decode data from URL:', error)
             }
@@ -46,6 +60,11 @@ export default class MapScene extends Scene {
         this.textTiles = JSON.parse(localStorage.getItem('texts')) || []
         this.propsTiles = JSON.parse(localStorage.getItem('props')) || []
         this.gridTiles = JSON.parse(localStorage.getItem('grid')) || []
+        this.rgbValues = JSON.parse(localStorage.getItem('rgbValues')) || {
+            R: 0.0,
+            G: 0.0,
+            B: 0.0,
+        }
     }
 
     preload() {
@@ -111,6 +130,17 @@ export default class MapScene extends Scene {
             x: 32,
             y: 200,
         })
+
+        iconGroup.getChildren().forEach((icon) => {
+            icon.setInteractive()
+
+            icon.on('pointerover', () => {
+                this.icon_selected_name = icon.name
+            })
+            icon.on('pointerout', () => {
+                this.icon_selected_name = ''
+            })
+        })
     }
 
     createIcon(tile) {
@@ -134,6 +164,7 @@ export default class MapScene extends Scene {
     }
 
     handleIconSelection(icon) {
+        this.saveState()
         this.clearSelections(icon)
         icon.selected = true
         this.beep.play()
@@ -177,7 +208,63 @@ export default class MapScene extends Scene {
         return draggableIcon
     }
 
+    saveState() {
+        const state = {
+            iconTiles: JSON.parse(JSON.stringify(this.iconTiles)),
+            textTiles: JSON.parse(JSON.stringify(this.textTiles)),
+            propsTiles: JSON.parse(JSON.stringify(this.propsTiles)),
+            gridTiles: JSON.parse(JSON.stringify([...this.grid.grid])),
+        }
+        this.undoStack.push(state)
+        this.redoStack = []
+    }
+
+    restoreState(state) {
+        this.iconTiles = JSON.parse(JSON.stringify(state.iconTiles))
+        this.textTiles = JSON.parse(JSON.stringify(state.textTiles))
+        this.propsTiles = JSON.parse(JSON.stringify(state.propsTiles))
+        this.grid.grid = new Map(state.gridTiles)
+
+        this.iconTilesGroup.clear(true, true)
+        this.textTilesGroup.clear(true, true)
+        this.populateIconTilesGroup()
+        this.populateTextTilesGroup()
+        this.drawUI()
+        this.update()
+    }
+
+    undo() {
+        if (this.undoStack.length > 0) {
+            const currentState = {
+                iconTiles: JSON.parse(JSON.stringify(this.iconTiles)),
+                textTiles: JSON.parse(JSON.stringify(this.textTiles)),
+                propsTiles: JSON.parse(JSON.stringify(this.propsTiles)),
+                gridTiles: JSON.parse(JSON.stringify([...this.grid.grid])),
+            }
+            this.redoStack.push(currentState)
+            const prevState = this.undoStack.pop()
+            this.restoreState(prevState)
+        }
+    }
+
+    redo() {
+        if (this.redoStack.length > 0) {
+            const currentState = {
+                iconTiles: JSON.parse(JSON.stringify(this.iconTiles)),
+                textTiles: JSON.parse(JSON.stringify(this.textTiles)),
+                propsTiles: JSON.parse(JSON.stringify(this.propsTiles)),
+                gridTiles: JSON.parse(JSON.stringify([...this.grid.grid])),
+            }
+            this.undoStack.push(currentState)
+            const nextState = this.redoStack.pop()
+            this.restoreState(nextState)
+        }
+    }
+
     create() {
+        this.undoStack = []
+        this.redoStack = []
+
         this.textgroup = this.add.group()
         this.cameras.main.fadeIn(1000)
         this.beep = this.sound.add('beep', { volume: 0.25 })
@@ -186,8 +273,8 @@ export default class MapScene extends Scene {
         this.time = 0.0
         this.brigt = 0.6
         this.noise = 0.0
-        this.R = 0.0
-        this.B = 0.0
+        this.R = this.rgbValues.R
+        this.B = this.rgbValues.B
         this.icon_selected_name = ''
         this.cameras.main.setRenderToTexture(this.customPipeline)
         this.drawTexts()
@@ -250,9 +337,11 @@ export default class MapScene extends Scene {
         this.input.keyboard.on('keydown_SPACE', this.switchLayer, this)
         this.input.keyboard.on('keydown_R', this.adjustRed, this)
         this.input.keyboard.on('keydown_B', this.adjustBlue, this)
-        this.input.keyboard.on('keydown_D', this.downloadAsPNG, this)
+        this.input.keyboard.on('keydown_I', this.downloadAsPNG, this)
         this.input.keyboard.on('keydown_P', this.printAsPDF, this)
         this.input.keyboard.on('keydown_F2', this.generateRandomMap, this)
+        this.input.keyboard.on('keydown_Z', this.undo, this)
+        this.input.keyboard.on('keydown_V', this.redo, this)
     }
 
     setupBackground(rect) {
@@ -335,10 +424,12 @@ export default class MapScene extends Scene {
 
             icon.on('pointerup', () => {
                 this.iconTiles[icon.name] = icon
+
                 localStorage.setItem('icons', JSON.stringify(this.iconTiles))
             })
 
             icon.on('pointerdown', (pointer) => {
+                this.saveState()
                 if (pointer.rightButtonDown()) {
                     icon.destroy()
                     this.iconTiles.splice(icon.name, 1)
@@ -401,6 +492,7 @@ export default class MapScene extends Scene {
     }
 
     resetMap() {
+        this.saveState()
         this.propsTiles.forEach((tile) => {
             this.upperLayer.removeTileAt(tile.x, tile.y)
         })
@@ -408,6 +500,8 @@ export default class MapScene extends Scene {
         this.iconTiles = []
         this.textTiles = []
         this.propsTiles = []
+        this.R = 0.0
+        this.B = 0.0
         this.iconTilesGroup.clear(true, true)
         this.textTilesGroup.clear(true, true)
         this.grid.grid = new Map()
@@ -416,6 +510,7 @@ export default class MapScene extends Scene {
     }
 
     generateRandomMap() {
+        this.saveState()
         this.resetMap()
         this.mirror = { x: true, y: true }
         this.generateRandomDungeon()
@@ -423,7 +518,7 @@ export default class MapScene extends Scene {
     }
 
     generateRandomDungeon() {
-        const roomCount = 8
+        const roomCount = 32
         const minRoomSize = 2
         const maxRoomSize = 8
 
@@ -634,10 +729,12 @@ export default class MapScene extends Scene {
     adjustRed() {
         if (this.disableKeyboard) return
         this.R = this.R > 0.5 ? 0.0 : this.R + 0.01
+        this.storeRGBValues()
     }
 
     adjustBlue() {
         this.B = this.B > 0.5 ? 0.0 : this.B + 0.01
+        this.storeRGBValues()
     }
 
     downloadAsPNG() {
@@ -856,6 +953,7 @@ export default class MapScene extends Scene {
     }
 
     handlePointerAction(pointer) {
+        this.saveState()
         if (pointer.leftButtonDown()) {
             this.handleDrawing(pointer)
         } else {
@@ -938,6 +1036,7 @@ export default class MapScene extends Scene {
 
     /// ERASE GRID
     handleErasing() {
+        this.saveState()
         if (this.mapLayer) {
             this.applyGridErasing()
         } else {
