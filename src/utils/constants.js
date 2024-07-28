@@ -5,6 +5,7 @@ export const LOADING_BAR_HEIGHT = 4
 export const BACKGROUND_COLOR = 0x081c1b
 export const LOADING_BAR_COLOR = 0x1d8d80
 export const PROPS_FRAME_SIZE = 32
+export const TILES_FRAME_SIZE = 64
 
 export const FONT_OPTIONS = [
     { key: 'neuro', label: '//ALIEN123', x: 186, y: 466 },

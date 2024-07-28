@@ -108,10 +108,16 @@ export default class MapScene extends Scene {
         })
     }
 
-    selectTile(prop) {
-        prop.selected = true
-        this.selectedTile = prop.frame.name
-        prop.setTint(0x888888)
+    selectTile(selectedProp) {
+        selectedProp.selected = true
+        this.selectedTile = selectedProp.frame.name
+        this.group.getChildren().forEach((prop) => {
+            if (prop === selectedProp) {
+                selectedProp.setTint(0x888888)
+            } else {
+                prop.setTint(0xffffff)
+            }
+        })
     }
 
     generateIcons() {
@@ -266,8 +272,9 @@ export default class MapScene extends Scene {
         this.redoStack = []
 
         this.textgroup = this.add.group()
+        this.confirmDialogOpen = false
         this.cameras.main.fadeIn(1000)
-        this.beep = this.sound.add('beep', { volume: 0.25 })
+        this.beep = this.sound.add('beep', { volume: 0.5 })
         this.selectedTile = 0
         this.registry.events.on('changedata', this.updateData, this)
         this.time = 0.0
@@ -303,7 +310,7 @@ export default class MapScene extends Scene {
         this.generateTiles()
 
         this.killScene = false
-        this.hud = this.sound.add('hud', { volume: 0.3 })
+        this.hud = this.sound.add('hud', { volume: 0.5 })
 
         const drawRect = new Geom.Rectangle(
             EDITABLE_AREA.X,
@@ -329,7 +336,7 @@ export default class MapScene extends Scene {
 
     setupKeyboard() {
         this.input.keyboard.on('keydown_H', this.toggleHelp, this)
-        this.input.keyboard.on('keydown_ESC', this.resetMap, this)
+        this.input.keyboard.on('keydown_ESC', this.showResetConfirmation, this)
         this.input.keyboard.on('keydown_A', this.adjustBrightness, this)
         this.input.keyboard.on('keydown_N', this.toggleNoise, this)
         this.input.keyboard.on('keydown_X', this.toggleMirrorX, this)
@@ -390,13 +397,13 @@ export default class MapScene extends Scene {
         this.autotilePropsLayer.addTilesetImage('props')
 
         this.bottomLayer = this.autotileMapLayer.createBlankDynamicLayer(
-            'bottomLayer',
+            'gridLayer',
             this.spriteKey[0],
             this.board.x,
             this.board.y
         )
         this.upperLayer = this.autotilePropsLayer.createBlankDynamicLayer(
-            'middleLayer',
+            'propsLayer',
             'props',
             this.board.x,
             this.board.y
@@ -490,6 +497,127 @@ export default class MapScene extends Scene {
     toggleHelp() {
         if (this.disableKeyboard) return
         this.text_help = !this.text_help
+    }
+
+    showConfirmationDialog({
+        message = 'Are you sure?',
+        yesText = 'Yes',
+        noText = 'No',
+        onYes = () => {},
+        onNo = () => {},
+    }) {
+        if (this.disableKeyboard || this.confirmDialogOpen) return
+        this.confirmDialogOpen = true
+
+        this.hud.play()
+
+        const { width, height } = this.cameras.main
+
+        const dialogWidth = Math.min(width * 0.5, 550)
+        const dialogHeight = Math.min(height * 0.25, 150)
+        const dialogX = -(dialogWidth / 2)
+        const dialogY = -(dialogHeight / 2)
+
+        const container = this.add.container(width / 2, height / 2)
+
+        const confirmDialog = this.add.graphics()
+        confirmDialog.fillStyle(0x000000, 0.8)
+        confirmDialog.fillRect(dialogX, dialogY, dialogWidth, dialogHeight)
+
+        const confirmText = this.add
+            .bitmapText(dialogX + 10, dialogY + 24, 'neuro', message, 20)
+            .setMaxWidth(dialogWidth - 20)
+            .setTint(0x1d8d80)
+
+        const yesButton = this.add
+            .bitmapText(
+                dialogX + 14,
+                dialogY + dialogHeight - 60,
+                'font',
+                yesText,
+                24
+            )
+
+            .setInteractive()
+
+        const noButton = this.add
+            .bitmapText(
+                dialogX + 100,
+                dialogY + dialogHeight - 60,
+                'font',
+                noText,
+                24
+            )
+            .setInteractive()
+
+        container.add([confirmDialog, confirmText, yesButton, noButton])
+        container.setScale(0)
+
+        yesButton.on('pointerover', () => {
+            yesButton.setTint(0x1d8d80)
+        })
+
+        yesButton.on('pointerout', () => {
+            yesButton.setTint(0xffffff)
+        })
+
+        yesButton.on('pointerdown', () => {
+            this.beep.play()
+            this.confirmDialogOpen = false
+            this.tweens.add({
+                targets: container,
+                scaleX: 0,
+                scaleY: 0,
+                duration: 300,
+                ease: 'Back.easeIn',
+                onComplete: () => {
+                    container.destroy()
+                    this.confirmDialogOpen = false
+                    onYes()
+                },
+            })
+        })
+
+        noButton.on('pointerover', () => {
+            noButton.setTint(0x1d8d80)
+        })
+
+        noButton.on('pointerout', () => {
+            noButton.setTint(0xffffff)
+        })
+
+        noButton.on('pointerdown', () => {
+            this.tweens.add({
+                targets: container,
+                scaleX: 0,
+                scaleY: 0,
+                duration: 300,
+                ease: 'Back.easeIn',
+                onComplete: () => {
+                    container.destroy()
+                    this.confirmDialogOpen = false
+                    onNo()
+                },
+            })
+        })
+
+        this.tweens.add({
+            targets: container,
+            scaleX: 1,
+            scaleY: 1,
+            duration: 300,
+            ease: 'Back.easeOut',
+        })
+    }
+
+    showResetConfirmation() {
+        this.showConfirmationDialog({
+            message: 'Are you sure you want to reset the map?',
+            yesText: 'Yes',
+            noText: 'No',
+            onYes: () => this.resetMap(),
+            onNo: () => {},
+        })
     }
 
     resetMap() {
@@ -1109,7 +1237,7 @@ export default class MapScene extends Scene {
         this.updateCustomPipeline()
         this.incrementTime()
 
-        if (this.updating) {
+        if (this.updating && !this.confirmDialogOpen) {
             this.drawUI()
             this.updating = false
         }
