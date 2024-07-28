@@ -70,7 +70,7 @@ export default class MapScene extends Scene {
     getFromLocalStorage(key) {
         const item = localStorage.getItem(key)
 
-        if (item === 'undefined') {
+        if (item === 'undefined' || !item) {
             return localStorage.setItem('texts', [])
         }
 
