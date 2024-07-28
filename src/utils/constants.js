@@ -155,7 +155,7 @@ export const EDITOR_TEXTS = [
         x: BASE_X,
         y: TEXT_Y + 296,
         font: NEURO_FONT,
-        text: 'SOFTWARE: NEWT Blueprint Builder v111',
+        text: 'SOFTWARE: NEWT Blueprint Builder v112',
         size: FONT_SIZE,
         tint: TINT_TERTIARY,
         alpha: ALPHA_MAIN,
