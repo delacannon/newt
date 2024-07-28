@@ -57,7 +57,7 @@ export default class MapScene extends Scene {
         }
 
         this.iconTiles = JSON.parse(localStorage.getItem('icons')) || []
-        this.textTiles = JSON.parse(localStorage.getItem('texts')) || []
+        this.textTiles = this.getFromLocalStorage('texts') || []
         this.propsTiles = JSON.parse(localStorage.getItem('props')) || []
         this.gridTiles = JSON.parse(localStorage.getItem('grid')) || []
         this.rgbValues = JSON.parse(localStorage.getItem('rgbValues')) || {
@@ -65,6 +65,16 @@ export default class MapScene extends Scene {
             G: 0.0,
             B: 0.0,
         }
+    }
+
+    getFromLocalStorage(key) {
+        const item = localStorage.getItem(key)
+
+        if (item === 'undefined') {
+            return localStorage.setItem('texts', [])
+        }
+
+        return JSON.parse(item)
     }
 
     preload() {
