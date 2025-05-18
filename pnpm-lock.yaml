@@ -9,16 +9,13 @@ importers:
   .:
     dependencies:
       jspdf:
-        specifier: ^2.5.1
+        specifier: 2.5.1
         version: 2.5.1
-      localstorage-slim:
-        specifier: ^2.7.1
-        version: 2.7.1
       phaser:
-        specifier: ^3.24.1
+        specifier: 3.24.1
         version: 3.24.1(webpack@5.93.0)
       phaser3-autotile:
-        specifier: ~0.2.1
+        specifier: 0.2.1
         version: 0.2.1(webpack@5.93.0)
     devDependencies:
       prettier:
@@ -525,9 +522,6 @@ packages:
   loader-utils@2.0.4:
     resolution: {integrity: sha512-xXqpXoINfFhgua9xiqD8fPFHgkoq1mmmpE92WlDbm9rNRd/EbRb+Gqf908T2DMfuHjjJlksiK2RbHVOdD/MqSw==}
     engines: {node: '>=8.9.0'}
-
-  localstorage-slim@2.7.1:
-    resolution: {integrity: sha512-ExqYZl+pRpxPIcx0n0541T5CmSdRulHJCPDLrxIe23d4ehbqERDNJHcwsAVrVP09CZ/0j3PU92sI8a3KaGqXPQ==}
 
   merge-stream@2.0.0:
     resolution: {integrity: sha512-abv/qOcuPfk3URPfDzmZU1LKmuw8kT+0nIHvKrKgFrwifol/doWcdA4ZqsWQ8ENrFKkd67Mfpo/LovbIUsbt3w==}
@@ -1171,8 +1165,6 @@ snapshots:
       big.js: 5.2.2
       emojis-list: 3.0.0
       json5: 2.2.3
-
-  localstorage-slim@2.7.1: {}
 
   merge-stream@2.0.0: {}
 
